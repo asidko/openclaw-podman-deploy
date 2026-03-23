@@ -1,6 +1,12 @@
-# OpenClaw VM
+# OpenClaw Podman Deploy
 
-Deploy and run [OpenClaw](https://openclaw.org) in under a minute. One script, one command — production-ready gateway running in an isolated Podman container with auto-restart, persistent storage, and zero root required.
+[OpenClaw](https://openclaw.org) is an open-source gateway for accessing AI models. This repo deploys it in under a minute — one script, one command — production-ready gateway running in an isolated Podman container with auto-restart, persistent storage, and zero root required.
+
+## Requirements
+
+- **OS**: Linux (Debian/Ubuntu, Fedora/RHEL, Arch). Not compatible with macOS or Windows (WSL works).
+- **Podman**: v4.0+ (rootless mode). Docker is not supported.
+- **Disk**: ~2 GB for the container image.
 
 ## Quick Start
 
@@ -9,11 +15,14 @@ Deploy and run [OpenClaw](https://openclaw.org) in under a minute. One script, o
 sudo apt install -y podman    # Debian/Ubuntu
 sudo dnf install -y podman    # Fedora/RHEL
 
-# start (builds image on first run)
+# clone and start
+git clone https://github.com/asidko/openclaw-podman-deploy.git
+cd openclaw-podman-deploy
 ./run.sh start
 
-# open a shell inside the container
+# open a shell inside the container and run the setup wizard
 ./run.sh shell
+openclaw setup    # ← runs inside the container
 ```
 
 ## Commands
@@ -32,6 +41,12 @@ sudo dnf install -y podman    # Fedora/RHEL
 ./run.sh setup          Enable auto-restart after host reboot
 ```
 
+Verify it's running:
+
+```sh
+./run.sh status
+```
+
 ## How It Works
 
 - **Single file**: `run.sh` generates the Containerfile inline and manages the full lifecycle
@@ -39,6 +54,7 @@ sudo dnf install -y podman    # Fedora/RHEL
 - **Auto-restart**: `openclaw gateway` restarts with exponential backoff (1s to 60s); container restarts via `--restart=always`
 - **Network isolated**: `slirp4netns` with host loopback disabled — container cannot reach host services
 - **Rootless**: runs entirely without root via Podman user namespaces
+- **Container password**: the in-container user password is `openclaw` (for sudo inside the container only — no host exposure)
 
 ## Backup & Restore
 
@@ -62,4 +78,4 @@ This enables systemd linger and `podman-restart.service` for your user.
 
 ## Pre-installed Tools
 
-Python 3, Node.js 22, git, uv, gh, ripgrep, fd, fzf, jq, yq, build-essential, and more. Full list in the generated Containerfile (see `run.sh`).
+Python 3, Node.js 22, git, uv, gh, ripgrep, fd, fzf, jq, yq, tmux, sqlite3, build-essential, and more. Full list in the generated Containerfile (see `run.sh`).

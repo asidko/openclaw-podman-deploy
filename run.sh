@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# OpenClaw VM Runner (Podman)
+# OpenClaw Podman Deploy
 # Runs an isolated Ubuntu 24.04 LTS container via Podman rootless.
 # The entrypoint loops `openclaw gateway run` with exponential backoff.
 # Network-isolated: slirp4netns with host loopback disabled.
@@ -25,6 +25,17 @@
 #
 set -euo pipefail
 
+# ── Help (before preflight so it works without podman) ────────────────────
+case "${1:-}" in -h|--help|help) head -24 "$0" | tail -14; exit 0 ;; esac
+
+# ── Preflight ─────────────────────────────────────────────────────────────
+command -v podman >/dev/null 2>&1 || { echo "Error: podman is not installed. Run: sudo apt install -y podman"; exit 1; }
+if ! grep -q "^$(whoami):" /etc/subuid 2>/dev/null; then
+    echo "Error: rootless podman requires subuid/subgid entries for $(whoami)."
+    echo "Fix:   sudo usermod --add-subuids 100000-165535 --add-subgids 100000-165535 $(whoami) && podman system migrate"
+    exit 1
+fi
+
 # ── Config ──────────────────────────────────────────────────────────────────
 DIR="$(cd "$(dirname "$0")" && pwd)"
 CONTAINER_NAME="openclaw"
@@ -41,25 +52,22 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # core tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl wget git htop tmux screen vim nano jq unzip zip file man-db \
-    patch dos2unix direnv expect sudo \
+    curl wget git htop tmux vim nano jq unzip zip file sudo direnv \
     # build toolchain
-    build-essential cmake pkg-config libssl-dev libffi-dev zlib1g-dev \
+    build-essential \
     # python
     python3 python3-pip python3-venv \
     # code search & navigation
-    ripgrep fd-find tree fzf silversearcher-ag \
+    ripgrep fd-find tree fzf \
     # networking
-    net-tools dnsutils iputils-ping netcat-openbsd socat openssl \
+    net-tools dnsutils iputils-ping netcat-openbsd openssl \
     openssh-client rsync \
     # databases
     sqlite3 \
     # process debugging
-    strace lsof sysstat psmisc \
+    lsof psmisc \
     # compression
-    bzip2 xz-utils p7zip-full \
-    # text & data processing
-    xmlstarlet shellcheck \
+    bzip2 xz-utils \
     # tls/auth
     ca-certificates gnupg \
     && rm -rf /var/lib/apt/lists/*
@@ -287,5 +295,5 @@ case "${1:-start}" in
     backup)  backup_container ;;
     restore) shift; restore_container "${1:?Usage: $0 restore <backup_file>}" ;;
     setup)   setup_host ;;
-    *)       echo "Usage: $0 {start|stop|restart|status|shell|destroy|rebuild|logs|backup|restore|setup}"; exit 1 ;;
+    *)       echo "Usage: $0 {start|stop|restart|status|shell|destroy|rebuild|logs|backup|restore|setup|help}"; exit 1 ;;
 esac
