@@ -1,5 +1,7 @@
 # OpenClaw Podman Deploy
 
+[![lint](https://github.com/asidko/openclaw-podman-deploy/actions/workflows/lint.yml/badge.svg)](https://github.com/asidko/openclaw-podman-deploy/actions/workflows/lint.yml)
+
 [OpenClaw](https://openclaw.org) is an open-source gateway for accessing AI models. This repo deploys it in under a minute — one script, one command — production-ready gateway running in an isolated Podman container with auto-restart, persistent storage, and zero root required.
 
 ## Requirements
