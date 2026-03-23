@@ -235,9 +235,11 @@ show_logs() {
 
 backup_container() {
     container_exists || { echo "No container to backup."; return 1; }
-    local ts=$(date +%Y%m%d_%H%M%S)
+    local ts
+    ts=$(date +%Y%m%d_%H%M%S)
     local out="$DIR/openclaw_backup_${ts}.tar.gz"
-    local tmp=$(mktemp -d) && trap "rm -rf '$tmp'" EXIT
+    local tmp
+    tmp=$(mktemp -d) && trap 'rm -rf "$tmp"' EXIT
 
     echo "Exporting container..."
     podman export "$CONTAINER_NAME" > "$tmp/container.tar"
@@ -251,8 +253,10 @@ backup_container() {
 restore_container() {
     local archive="$1"
     [ -f "$archive" ] || { echo "File not found: $archive"; return 1; }
-    local ts=$(date +%Y%m%d_%H%M%S)
-    local tmp=$(mktemp -d) && trap "rm -rf '$tmp'" EXIT
+    local ts
+    ts=$(date +%Y%m%d_%H%M%S)
+    local tmp
+    tmp=$(mktemp -d) && trap 'rm -rf "$tmp"' EXIT
 
     tar xzf "$archive" -C "$tmp"
     [ -f "$tmp/container.tar" ] && [ -f "$tmp/data.tar" ] || { echo "Invalid backup archive."; return 1; }
