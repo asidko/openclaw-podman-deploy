@@ -321,7 +321,9 @@ container_exists() {
 
 preflight_ports() {
     check_port_free "$SSH_PORT"
-    [ -n "$GATEWAY_PORT" ] && check_port_free "$GATEWAY_PORT"
+    if [ -n "$GATEWAY_PORT" ]; then
+        check_port_free "$GATEWAY_PORT"
+    fi
 }
 
 create_container() {
