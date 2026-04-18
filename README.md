@@ -4,9 +4,18 @@
 
 [OpenClaw](https://openclaw.org) is an open-source gateway for accessing AI models. This repo deploys it with one script — a production-ready gateway running in an isolated Podman container with auto-restart, persistent storage, and zero root required.
 
+## 🤔 Why a container?
+
+You could install OpenClaw on your host. A container gives you:
+
+- **Blast radius = the container.** Gateway misbehaviour cannot touch your home, keys, or system.
+- **Same environment everywhere.** Ubuntu 24.04 + known toolchain, identical on every Linux host.
+- **Clean install/uninstall, one-command backup.** No host dotfiles or systemd leftovers; `./run.sh backup` → single tarball.
+- **Network-isolated by default.** Host loopback blocked; opt in with `GATEWAY_PORT`.
+
 ## 📋 Requirements
 
-- **OS**: Linux (Debian/Ubuntu, Fedora/RHEL, Arch). WSL works.
+- **OS**: Linux (Debian/Ubuntu, Fedora/RHEL, Arch)
 - **Podman**: v4.0+ (rootless mode)
 - **Disk**: ~2 GB for the container image
 
@@ -44,8 +53,8 @@ exit
 **5. Verify**
 
 ```sh
-./run.sh status   # ← should show "Container running."
-./run.sh version  # ← shows installed openclaw version
+./run.sh status   # ← container + gateway state, last exit reason
+./run.sh version  # ← installed openclaw version
 ```
 
 After setup, the gateway runs automatically. On subsequent boots, the container starts on its own. SSH is also exposed on host port `2222` by default, so you can connect and forward ports through the container when needed.
@@ -53,32 +62,39 @@ After setup, the gateway runs automatically. On subsequent boots, the container 
 ## 🛠 Commands
 
 ```
-./run.sh start          Start container (creates on first run, resumes if stopped)
-./run.sh stop           Stop container (preserves state)
-./run.sh restart        Stop + start
-./run.sh status         Check if container is running
-./run.sh shell [cmd]    Open shell or run a command inside container
-./run.sh update         Update openclaw to latest version
-./run.sh version        Show installed openclaw version
-./run.sh logs           Show container logs
-./run.sh backup         Export container + data to timestamped .tar.gz
-./run.sh restore <file> Restore from backup archive
-./run.sh destroy        Remove container (data in .data/ is kept)
-./run.sh rebuild        Destroy + rebuild image from scratch
-./run.sh setup          Enable auto-restart after host reboot
+./run.sh start               Start container (creates on first run, resumes if stopped)
+./run.sh stop                Stop container (preserves state)
+./run.sh restart             Stop + start
+./run.sh status              Show container + gateway state, last exit reason
+./run.sh shell               Interactive shell inside container
+./run.sh shell -- cmd args…  Run argv directly (no shell parsing)
+./run.sh shell -c 'string'   Run command string via bash -lc
+./run.sh update              Update openclaw; print version diff
+./run.sh version             Show installed openclaw version
+./run.sh logs                Show container logs
+./run.sh backup              Stop briefly, export to .backups/ (mode 0600)
+./run.sh restore <file>      Restore container + data; rolls back on failure
+./run.sh destroy             Remove container (data in .data/ is kept)
+./run.sh rebuild [--yes]     Destroy + rebuild image from scratch
+./run.sh setup               Enable auto-restart after host reboot
+```
+
+Environment overrides:
+
+```
+SSH_PORT=2222              Host port for container SSH
+GATEWAY_PORT=3000          Expose gateway port from container to host
+OPENCLAW_VERSION=latest    npm tag/version pinned at build + install time
 ```
 
 ## 📝 Logs
 
-Gateway logs are available from the container directly:
-
 ```sh
-podman logs openclaw
-podman logs -f --tail 50 openclaw   # follow last 50 lines
-
-# or via helper
 ./run.sh logs
+podman logs -f --tail 50 openclaw   # follow last 50 lines
 ```
+
+Each `openclaw gateway exited (…)` supervisor line is timestamped, including restart count. `./run.sh status` surfaces the most recent exit line so a crash-looping gateway is visible at a glance.
 
 If OpenClaw writes its own log files under the user home, they are also available under `.data/openclaw-user-home/` on the host.
 
@@ -86,7 +102,8 @@ If OpenClaw writes its own log files under the user home, they are also availabl
 
 - `run.sh` manages everything and generates the image definition on demand
 - Your data lives in `.data/openclaw-user-home/` and survives restarts, destroys, and rebuilds
-- If `openclaw gateway run` crashes, it auto-restarts with exponential backoff
+- On `start`, the entrypoint waits for a host-written sentinel before launching the gateway, so home-directory init can complete without a race
+- If `openclaw gateway run` crashes, it auto-restarts with exponential backoff; backoff resets on a clean exit or after a healthy run
 - If the host reboots, the container auto-starts
 - SSH runs inside the container on port `2222` for shell access and tunneling
 - Runs without root via Podman rootless mode
@@ -134,14 +151,13 @@ This maps the same host/container port through Podman. SSH stays available on `2
 
 ```sh
 ./run.sh backup
-# creates openclaw_backup_20260314_120000.tar.gz
+# creates .backups/openclaw_backup_20260314_120000.tar.gz (mode 0600)
 
-./run.sh restore openclaw_backup_20260314_120000.tar.gz
-# existing container/data renamed with _old_ suffix, not deleted
+./run.sh restore .backups/openclaw_backup_20260314_120000.tar.gz
+# existing container/data renamed with _old_ suffix; auto-rollback on failure
 ```
 
-Backups include the full container filesystem and user data, preserving any custom packages or modifications made inside the container.
-The backup flow briefly stops the container to keep the archive consistent, then starts it again if it was running before.
+Backups include the full container filesystem and user data, preserving custom packages and configuration. The archive contains `.ssh/`, `.config/`, `.npmrc` and similar — treat it as a secret. The backup flow briefly stops the container for a consistent snapshot, then starts it again if it was running before. Restore is atomic: on any failure (bad archive, tar error, container creation) the previous container and data are restored.
 
 ## 🧰 Pre-installed Tools
 

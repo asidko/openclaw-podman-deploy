@@ -1,6 +1,6 @@
 .data/
 .data_old_*/
 .tmp/
+.backups/
 Containerfile
-openclaw_backup_*.tar.gz
 tasks/
