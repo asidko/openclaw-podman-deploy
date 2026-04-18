@@ -94,7 +94,6 @@ RUN apt-get update \
     bzip2 xz-utils \
     # tls/auth
     ca-certificates gnupg locales \
-    && rm -rf /var/lib/apt/lists/* \
     && sed -i '/en_US.UTF-8/s/^# //' /etc/locale.gen \
     && locale-gen
 
@@ -104,16 +103,14 @@ ENV SHELL=/bin/bash
 
 # node.js 22
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
-    && eatmydata apt-get install -y nodejs \
-    && rm -rf /var/lib/apt/lists/*
+    && eatmydata apt-get install -y nodejs
 
 # github cli
 RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
         | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
     && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
         > /etc/apt/sources.list.d/github-cli.list \
-    && apt-get update && eatmydata apt-get install -y gh \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get update && eatmydata apt-get install -y gh
 
 # yq — pinned version, sha256 verified via release checksums manifest
 ARG YQ_VERSION=v4.45.4
