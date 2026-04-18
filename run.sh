@@ -80,14 +80,16 @@ RUN apt-get update \
     # python
     python3 python3-pip python3-venv \
     # code search & navigation
-    ripgrep fd-find tree fzf \
-    # networking
+    ripgrep fd-find tree fzf bat \
+    # networking & sync
     net-tools dnsutils iputils-ping netcat-openbsd openssl \
-    openssh-client openssh-server rsync \
+    openssh-client openssh-server rsync rclone \
     # databases
     sqlite3 \
-    # process debugging
-    lsof psmisc \
+    # process debugging & scripting helpers
+    lsof psmisc moreutils \
+    # documents
+    poppler-utils \
     # media
     ffmpeg \
     # compression
@@ -95,7 +97,10 @@ RUN apt-get update \
     # tls/auth
     ca-certificates gnupg locales \
     && sed -i '/en_US.UTF-8/s/^# //' /etc/locale.gen \
-    && locale-gen
+    && locale-gen \
+    # ubuntu renames these binaries to avoid conflicts; expose canonical names
+    && ln -sf /usr/bin/batcat /usr/local/bin/bat \
+    && ln -sf /usr/bin/fdfind /usr/local/bin/fd
 
 ENV LANG=en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8

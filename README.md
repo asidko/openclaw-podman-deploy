@@ -161,4 +161,4 @@ Backups include the full container filesystem and user data, preserving custom p
 
 ## 🧰 Pre-installed Tools
 
-Python 3, Node.js 22, OpenClaw, git, uv, gh, ripgrep, fd, fzf, jq, yq, tmux, sqlite3, build-essential, ffmpeg, OpenSSH server, and more. The image also enables UTF-8 locales and includes a `user_sudo.sh` helper inside the container.
+Python 3, Node.js 22, OpenClaw, git, uv, gh, ripgrep, fd, bat, fzf, jq, yq, tmux, sqlite3, build-essential, ffmpeg, rsync, rclone, moreutils (`ts`, `sponge`, `chronic`, …), poppler-utils (`pdftotext`, …), OpenSSH server, and more. The image also enables UTF-8 locales and includes a `user_sudo.sh` helper inside the container.
