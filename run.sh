@@ -574,7 +574,7 @@ setup_host() {
 run_shell() {
     is_running || { echo "Container not running. Start it first."; exit 1; }
     if [ $# -eq 0 ]; then
-        podman exec -it -u "$VM_USER" "$CONTAINER_NAME" /bin/bash
+        podman exec -it -u "$VM_USER" "$CONTAINER_NAME" bash -c 'cd ~/.openclaw 2>/dev/null; exec bash'
         return
     fi
     case "$1" in
