@@ -147,6 +147,33 @@ GATEWAY_PORT=3000 ./run.sh start
 
 This maps the same host/container port through Podman. SSH stays available on `2222`.
 
+## 🛡 Security
+
+The container is the blast radius, so OpenClaw guards that exist to protect a bare host can be relaxed inside without reaching your system:
+
+```sh
+./run.sh shell
+openclaw config set agents.defaults.sandbox.mode off
+openclaw config set tools.elevated.enabled true
+openclaw config set tools.elevated.allowFrom.telegram '["111111111", "222222222"]'
+openclaw config set tools.exec.host gateway
+openclaw config set tools.exec.security full
+openclaw config set tools.exec.ask off
+cat > ~/.openclaw/exec-approvals.json <<'EOF'
+{
+  "version": 1,
+  "defaults": {
+    "security": "full",
+    "ask": "off",
+    "askFallback": "full"
+  }
+}
+EOF
+exit
+```
+
+Keep the `allowFrom` allowlist tight — it's still the authorization surface for anyone who can reach your bot, and the container doesn't change that.
+
 ## 💾 Backup & Restore
 
 ```sh
