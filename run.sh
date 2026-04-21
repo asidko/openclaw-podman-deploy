@@ -136,7 +136,9 @@ RUN set -e; \
 # user setup
 RUN useradd -m -s /bin/bash -G sudo user \
     && echo "user:openclaw" | chpasswd \
-    && echo "user ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/user
+    && echo "user ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/user \
+    && git config --system user.name "user" \
+    && git config --system user.email "user@openclaw.local"
 
 # sudo wrapper — auto-prepends sudo unless already present
 RUN echo '#!/bin/bash\n[[ "$*" == *sudo* ]] && exec "$@" || exec sudo "$@"' > /usr/local/bin/user_sudo.sh \
