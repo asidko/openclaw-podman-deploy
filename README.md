@@ -147,6 +147,49 @@ GATEWAY_PORT=3000 ./run.sh start
 
 This maps the same host/container port through Podman. SSH stays available on `2222`.
 
+## 🤖 Add Claude Code as a provider
+
+Wire the Claude CLI in as an OpenClaw model backend. Inside the container:
+
+```sh
+./run.sh shell
+curl -fsSL https://claude.ai/install.sh | bash
+claude                # OAuth login once, then exit
+which claude          # note the absolute path — yours may differ from the example below
+```
+
+Minimal `openclaw.json` snippet:
+
+```json
+{
+  "agents": {
+    "defaults": {
+      "models": {
+        "claude-cli/claude-opus-4-7": {}
+      },
+      "cliBackends": {
+        "claude-cli": {
+          "command": "/home/admin/.local/bin/claude",
+          "args": ["-p", "--output-format", "json"],
+          "input": "arg",
+          "output": "json",
+          "serialize": true,
+          "sessionArg": "--session-id",
+          "sessionMode": "existing"
+        }
+      }
+    }
+  }
+}
+```
+
+Notes:
+
+- Replace `command` with your `which claude` output.
+- One model entry is enough. The backend doesn't pass `--model`, so extra entries resolve to whatever the CLI default is (Opus 4.7 right now).
+- To route traffic through it, set `agents.defaults.model.primary` — or a fallback — to `claude-cli/claude-opus-4-7`.
+- Restart OpenClaw to pick up the config: `./run.sh restart`.
+
 ## 🛡 Security
 
 The container is the blast radius, so OpenClaw guards that exist to protect a bare host can be relaxed inside without reaching your system:
